@@ -32,6 +32,7 @@ def main():
     # Creating MNE objects from brainflow data arrays
     ch_types = ['eeg'] * len(eeg_channels)
     ch_names = BoardShim.get_eeg_names(BoardIds.SYNTHETIC_BOARD.value)
+    print("channel names: ", ch_names)
     sfreq = BoardShim.get_sampling_rate(BoardIds.SYNTHETIC_BOARD.value)
     info = mne.create_info(ch_names=ch_names, sfreq=sfreq, ch_types=ch_types)
     raw = mne.io.RawArray(eeg_data, info)
@@ -39,6 +40,10 @@ def main():
     raw.plot_psd()
     plt.savefig('psd.png')
 
-    mne.export.export_raw("raw_data.edf", raw, overwrite=True)
+    mne.export.export_raw("raw_data.eeg", raw, overwrite=True)
+    np.savetxt("eeg_data.csv", eeg_data)
+
+    raw.plot()
+    plt.savefig('plot.png')
 
 main()
