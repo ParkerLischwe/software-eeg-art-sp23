@@ -1,143 +1,365 @@
-# Python code to implement Conway's Game Of Life
-import argparse
+# The Colorful Game of Life
+# Created by Adam Zheleznyak
+# https://github.com/adam-zheleznyak/colorful-life
+
+import math
+from random import random
+from random import uniform
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-
-# setting up the values for the grid
-ON = 255
-OFF = 0
-vals = [ON, OFF]
+import matplotlib.animation as anm
+import matplotlib.colors as clrs
 
 
-def randomGrid(N):
-    """returns a grid of NxN random values"""
-    return np.random.choice(vals, N * N, p=[0.2, 0.8]).reshape(N, N)
+class Hue:
+    """This is a class to represent a color's hue as a float mod 1. Two Hue objects can be added together to get a new Hue object."""
+
+    def __init__(self, value):
+        self.value = float(value % 1)
+
+    def __bool__(self):
+        return True
+
+    def __float__(self):
+        return float(self.value)
+
+    def __repr__(self):
+        return repr(self.value)
+
+    def __add__(self, other):
+        return Hue(self.value + other.value)
 
 
-def addGlider(i, j, grid):
-    """adds a glider with top left cell at (i, j)"""
-    glider = np.array([[0, 0, 255],
-                       [255, 0, 255],
-                       [0, 255, 255]])
-    grid[i:i + 3, j:j + 3] = glider
+def average_hue(list_of_hues):
+    """
+    Gets the average hue from a list of hues.
+
+    Parameters:
+    list_of_hues (list of Hue objects)
+
+    Returns:
+    Hue
+    """
+
+    x = 0.0
+    y = 0.0
+    # Take all the hues as points on a unit circle and average their coordinates to find the average
+    for hue in list_of_hues:
+        x += math.cos(hue.value * 2 * math.pi)
+        y += math.sin(hue.value * 2 * math.pi)
+    x /= len(list_of_hues)
+    y /= len(list_of_hues)
+    return Hue(math.atan2(y, x) / (2 * math.pi))
 
 
-def addGosperGliderGun(i, j, grid):
-    """adds a Gosper Glider Gun with top left
-       cell at (i, j)"""
-    gun = np.zeros(11 * 38).reshape(11, 38)
+def random_grid(height, width, density=.3, padding=0):
+    """
+    Gives a random 2D grid of 1s and 0s.
 
-    gun[5][1] = gun[5][2] = 255
-    gun[6][1] = gun[6][2] = 255
+    Parameters:
+    height (int): How many rows the grid will have
+    width (int): How many columns the grid will have
+    density (float): The probability any given cell will be a 1
+    padding (int): If a padding value is specified, cells within the padding distance of an edge will always be 0
 
-    gun[3][13] = gun[3][14] = 255
-    gun[4][12] = gun[4][16] = 255
-    gun[5][11] = gun[5][17] = 255
-    gun[6][11] = gun[6][15] = gun[6][17] = gun[6][18] = 255
-    gun[7][11] = gun[7][17] = 255
-    gun[8][12] = gun[8][16] = 255
-    gun[9][13] = gun[9][14] = 255
+    Returns:
+    2D list
+    """
 
-    gun[1][25] = 255
-    gun[2][23] = gun[2][25] = 255
-    gun[3][21] = gun[3][22] = 255
-    gun[4][21] = gun[4][22] = 255
-    gun[5][21] = gun[5][22] = 255
-    gun[6][23] = gun[6][25] = 255
-    gun[7][25] = 255
-
-    gun[3][35] = gun[3][36] = 255
-    gun[4][35] = gun[4][36] = 255
-
-    grid[i:i + 11, j:j + 38] = gun
+    if not padding:
+        return [[1 if random() < density else 0 for x in range(width)] for y in range(height)]
+    else:
+        return [[(1 if random() < density else 0) if (not (x < padding or x >= width - padding)) and (
+            not (y < padding or y >= height - padding)) else 0 for x in range(width)] for y in range(height)]
 
 
-def update(frameNum, img, grid, N):
-    # copy grid since we require 8 neighbors
-    # for calculation and we go line by line
-    newGrid = grid.copy()
-    for i in range(N):
-        for j in range(N):
+def random_colors(grid):
+    """
+    Gives random colors to a grid of cells.
 
-            # compute 8-neighbor sum
-            # using toroidal boundary conditions - x and y wrap around
-            # so that the simulation takes place on a toroidal surface.
-            total = int((grid[i, (j - 1) % N] + grid[i, (j + 1) % N] +
-                         grid[(i - 1) % N, j] + grid[(i + 1) % N, j] +
-                         grid[(i - 1) % N, (j - 1) % N] + grid[(i - 1) % N, (j + 1) % N] +
-                         grid[(i + 1) % N, (j - 1) % N] + grid[(i + 1) % N, (j + 1) % N]) / 255)
+    Parameters:
+    grid (2D list): Any cell that evaluates to True will become a random color
 
-            # apply Conway's rules
-            if grid[i, j] == ON:
-                if (total < 2) or (total > 3):
-                    newGrid[i, j] = OFF
-            else:
-                if total == 3:
-                    newGrid[i, j] = ON
+    Returns:
+    2D list of Hue objects
+    """
 
-    # update data
-    img.set_data(newGrid)
-    grid[:] = newGrid[:]
-    return img,
+    return [[Hue(random()) if cell else None for cell in row] for row in grid]
 
 
-# main() function
-def main():
-    # Command line args are in sys.argv[1], sys.argv[2] ..
-    # sys.argv[0] is the script name itself and can be ignored
-    # parse arguments
-    parser = argparse.ArgumentParser(description="Runs Conway's Game of Life simulation.")
+def colorful_life_step(colored_grid, color_variation=0.05, hard_boundary=True, rule=[[3], [2, 3]]):
+    """
+    Runs a step for The Colorful Game of Life.
 
-    # add arguments
-    parser.add_argument('--grid-size', dest='N', required=False)
-    parser.add_argument('--mov-file', dest='movfile', required=False)
-    parser.add_argument('--interval', dest='interval', required=False)
-    parser.add_argument('--glider', action='store_true', required=False)
-    parser.add_argument('--gosper', action='store_true', required=False)
-    args = parser.parse_args()
+    The Colorful Game of Life has the same rules as Conway's Game of Life, except that all living cells also have a color assigned to them. When a new cell is born, it will take on the average color of its parents. Color variation can be added so that newly born cells can deviate slightly in color. Living cells will keep their color fixed until they die.
 
-    # set grid size
-    N = 100
-    if args.N and int(args.N) > 8:
-        N = int(args.N)
+    Parameters:
+    colored_grid (2D list of Hue objects): The grid that should be stepped through
+    color_variation (float): A newly born cell will deviate from its color randomly up or down, with this amount being the maximum possible deviation.
+    hard_boundary (bool): Setting this to False will identify opposite edges so that cells touching the boundary will communicate with cells on the other side of the grid.
+    rule (2D list of integers): The first set of elements is how many neighbors leads to a birth, and the second is how many neighbors lead to a cell surviving.
 
-    # set animation update interval
-    updateInterval = 50
-    if args.interval:
-        updateInterval = int(args.interval)
+    Returns:
+    2D list of Hue objects
+    """
 
-    # declare grid
-    grid = np.array([])
+    height = len(colored_grid)
+    width = len(colored_grid[0])
+    next_grid = []
+    if not hard_boundary:
+        if width >= 3 and height >= 3:
+            for j in range(height):
+                row = []
+                for i in range(width):
+                    live_neighbors = [colored_grid[(j + a) % height][(i + b) % width] for a in (-1, 0, 1) for b in
+                                      (-1, 0, 1) if
+                                      ((a != 0 or b != 0) and colored_grid[(j + a) % height][(i + b) % width])]
+                    neighbor_count = len(live_neighbors)
+                    if colored_grid[j][i]:
+                        if neighbor_count in rule[1]:
+                            row.append(colored_grid[j][i])
+                        else:
+                            row.append(None)
+                    else:
+                        if neighbor_count in rule[0]:
+                            hue = average_hue(live_neighbors)
+                            row.append(Hue(hue.value + uniform(-color_variation, color_variation)))
+                        else:
+                            row.append(None)
+                next_grid.append(row)
+            return next_grid
+        else:
+            # Need to tweak things so cells aren't double-counted
+            for j in range(height):
+                row = []
+                for i in range(width):
+                    if height >= 3:
+                        # width is short
+                        live_neighbors = [colored_grid[(j + a) % height][(i + b) % width] for a in (-1, 0, 1) for b in
+                                          range(width) if (
+                                                      (a != 0 or b != 0) and colored_grid[(j + a) % height][
+                                                  (i + b) % width])]
+                    elif width >= 3:
+                        # height is short
+                        live_neighbors = [colored_grid[(j + a) % height][(i + b) % width] for a in range(height) for b
+                                          in (-1, 0, 1) if (
+                                                      (a != 0 or b != 0) and colored_grid[(j + a) % height][
+                                                  (i + b) % width])]
+                    else:
+                        # width and height are short
+                        live_neighbors = [colored_grid[(j + a) % height][(i + b) % width] for a in range(height) for b
+                                          in range(width) if (
+                                                      (a != 0 or b != 0) and colored_grid[(j + a) % height][
+                                                  (i + b) % width])]
 
-    # check if "glider" demo flag is specified
-    if args.glider:
-        grid = np.zeros(N * N).reshape(N, N)
-        addGlider(1, 1, grid)
-    elif args.gosper:
-        grid = np.zeros(N * N).reshape(N, N)
-        addGosperGliderGun(10, 10, grid)
+                    neighbor_count = len(live_neighbors)
+                    if colored_grid[j][i]:
+                        if neighbor_count in rule[1]:
+                            row.append(colored_grid[j][i])
+                        else:
+                            row.append(None)
+                    else:
+                        if neighbor_count in rule[0]:
+                            hue = average_hue(live_neighbors)
+                            row.append(Hue(hue.value + uniform(-color_variation, color_variation)))
+                        else:
+                            row.append(None)
+                next_grid.append(row)
+            return next_grid
+    else:
+        for j in range(height):
+            row = []
+            for i in range(width):
+                live_neighbors = [colored_grid[j + a][i + b] for a in (-1, 0, 1) for b in (-1, 0, 1) if (
+                            (a != 0 or b != 0) and ((j + a) % height is j + a) and (
+                                (i + b) % width is i + b) and colored_grid[j + a][i + b])]
+                neighbor_count = len(live_neighbors)
+                if colored_grid[j][i]:
+                    if neighbor_count in rule[1]:
+                        row.append(colored_grid[j][i])
+                    else:
+                        row.append(None)
+                else:
+                    if neighbor_count in rule[0]:
+                        hue = average_hue(live_neighbors)
+                        row.append(Hue(hue.value + uniform(-color_variation, color_variation)))
+                    else:
+                        row.append(None)
+            next_grid.append(row)
+        return next_grid
 
-    else:  # populate grid with random on/off -
-        # more off than on
-        grid = randomGrid(N)
 
-    # set up animation
-    fig, ax = plt.subplots()
-    img = ax.imshow(grid, interpolation='nearest')
-    ani = animation.FuncAnimation(fig, update, fargs=(img, grid, N,),
-                                  frames=10,
-                                  interval=updateInterval,
-                                  save_count=50)
+def colorful_animation(colored_grid, color_variation=0.05, hard_boundary=True, rule=[[3], [2, 3]], interval=300,
+                       cell_size=0.2, show=True):
+    """
+    This will create an animation of The Colorful Game of Life using Matplotlib. The animation will run forever until closed.
 
-    # # of frames?
-    # set output file
-    if args.movfile:
-        ani.save(args.movfile, fps=30, extra_args=['-vcodec', 'libx264'])
+    Parameters:
+    colored_grid (2D list of Hue objects): The starting grid.
+    color_variation (float): A newly born cell will deviate from its color randomly up or down, with this amount being the maximum possible deviation.
+    hard_boundary (bool): Setting this to False will identify opposite edges so that cells touching the boundary will communicate with cells on the other side of the grid.
+    rule (2D list of integers): The first set of elements is how many neighbors leads to a birth, and the second is how many neighbors lead to a cell surviving.
+    interval (int): The number of milliseconds each step should take in the animation.
+    cell_size (float): The number of inches per side of each cell.
+    show (bool): If this is True, the animation will open.
 
-    plt.show()
+    Returns:
+    An Animation object
+    """
+
+    def grid_to_array(grid):
+        X = np.asarray(grid)
+        X = X.astype(float)
+        return X
+
+    height = len(colored_grid)
+    width = len(colored_grid[0])
+
+    fig = plt.figure(figsize=(width * cell_size, height * cell_size))
+    ax = fig.add_axes([0, 0, 1, 1], xticks=[], yticks=[], frameon=False)
+    ax.axes.xaxis.set_visible(False)
+    ax.axes.yaxis.set_visible(False)
+
+    fig.patch.set_facecolor('black')
+
+    def animate(colored_grid):
+        plt.cla()
+        ax.imshow(grid_to_array(colored_grid), cmap=plt.cm.hsv, norm=clrs.Normalize(vmin=0, vmax=1),
+                  interpolation='nearest')
+
+    def frame_generator(colored_grid, color_variation, hard_boundary, rule):
+        yield colored_grid  # for some reason, this generator is being called once before the animation starts, so this is to account for that
+        while True:
+            yield colored_grid
+            colored_grid = colorful_life_step(colored_grid, color_variation, hard_boundary, rule)
+
+    anim = anm.FuncAnimation(fig, animate, frames=frame_generator(colored_grid, color_variation, hard_boundary, rule),
+                             interval=interval)
+
+    if show:
+        plt.show()
+
+    return anim
 
 
-# call main
-if __name__ == '__main__':
-    main()
+def colorful_animation_limited(colored_grid, number_of_frames, color_variation=0.05, hard_boundary=True,
+                               rule=[[3], [2, 3]], interval=300, cell_size=0.2, show=True):
+    """
+    This will create an animation of The Colorful Game of Life using Matplotlib. The animation will run for a limited number of steps and then restart.
+
+    Parameters:
+    colored_grid (2D list of Hue objects): The starting grid.
+    number_of_frames (int): How many steps until the animation restarts.
+    color_variation (float): A newly born cell will deviate from its color randomly up or down, with this amount being the maximum possible deviation.
+    hard_boundary (bool): Setting this to False will identify opposite edges so that cells touching the boundary will communicate with cells on the other side of the grid.
+    rule (2D list of integers): The first set of elements is how many neighbors leads to a birth, and the second is how many neighbors lead to a cell surviving.
+    interval (int): The number of milliseconds each step should take in the animation.
+    cell_size (float): The number of inches per side of each cell.
+    show (bool): If this is True, the animation will open.
+
+    Returns:
+    An Animation object
+    """
+
+    def grid_to_array(grid):
+        X = np.asarray(grid)
+        X = X.astype(float)
+        return X
+
+    frames = []
+
+    for i in range(number_of_frames):
+        frames.append(colored_grid)
+        colored_grid = colorful_life_step(colored_grid, color_variation, hard_boundary, rule)
+
+    height = len(colored_grid)
+    width = len(colored_grid[0])
+
+    fig = plt.figure(figsize=(width * cell_size, height * cell_size))
+    ax = fig.add_axes([0, 0, 1, 1], xticks=[], yticks=[], frameon=False)
+    ax.axes.xaxis.set_visible(False)
+    ax.axes.yaxis.set_visible(False)
+
+    fig.patch.set_facecolor('black')
+
+    def animate(colored_grid):
+        plt.cla()
+        ax.imshow(grid_to_array(colored_grid), cmap=plt.cm.hsv, norm=clrs.Normalize(vmin=0, vmax=1),
+                  interpolation='nearest')
+
+    anim = anm.FuncAnimation(fig, animate, frames=frames, interval=interval)
+
+    if show:
+        plt.show()
+
+    return anim
+
+
+def save_as_html(colored_grid, number_of_frames, filename, color_variation=0.05, hard_boundary=True, rule=[[3], [2, 3]],
+                 cell_size=0.2, interval=300):
+    """
+    Saves the animation as an HTML page.
+
+    Parameters:
+    colored_grid (2D list of Hue objects): The starting grid.
+    number_of_frames (int): How many steps until the animation restarts.
+    filename (str): What the HTML file should be saved as.
+    color_variation (float): A newly born cell will deviate from its color randomly up or down, with this amount being the maximum possible deviation.
+    hard_boundary (bool): Setting this to False will identify opposite edges so that cells touching the boundary will communicate with cells on the other side of the grid.
+    rule (2D list of integers): The first set of elements is how many neighbors leads to a birth, and the second is how many neighbors lead to a cell surviving.
+    interval (int): The number of milliseconds each step should take in the animation.
+    cell_size (float): The number of inches per side of each cell.
+    """
+
+    colorful_animation_limited(colored_grid, number_of_frames, color_variation=color_variation,
+                               hard_boundary=hard_boundary, rule=rule, interval=interval, cell_size=cell_size,
+                               show=False).save(filename, writer='html', savefig_kwargs={'facecolor': 'black'})
+    plt.close()
+
+
+def save_as_gif(colored_grid, number_of_frames, filename, color_variation=0.05, hard_boundary=True, rule=[[3], [2, 3]],
+                cell_size=0.2, interval=300):
+    """
+    Requires the package 'imagemagick' to be installed.
+
+    Saves the animation as a gif.
+
+    Parameters:
+    colored_grid (2D list of Hue objects): The starting grid.
+    number_of_frames (int): How many steps until the animation restarts.
+    filename (str): What the HTML file should be saved as.
+    color_variation (float): A newly born cell will deviate from its color randomly up or down, with this amount being the maximum possible deviation.
+    hard_boundary (bool): Setting this to False will identify opposite edges so that cells touching the boundary will communicate with cells on the other side of the grid.
+    rule (2D list of integers): The first set of elements is how many neighbors leads to a birth, and the second is how many neighbors lead to a cell surviving.
+    interval (int): The number of milliseconds each step should take in the animation.
+    cell_size (float): The number of inches per side of each cell.
+    """
+
+    colorful_animation_limited(colored_grid, number_of_frames, color_variation=color_variation,
+                               hard_boundary=hard_boundary, rule=rule, interval=interval, cell_size=cell_size,
+                               show=False).save(filename, writer='imagemagick', savefig_kwargs={'facecolor': 'black'})
+    plt.close()
+
+
+def save_as_mp4(colored_grid, number_of_frames, filename, color_variation=0.05, hard_boundary=True, rule=[[3], [2, 3]],
+                cell_size=0.2, interval=300):
+    """
+    Requires the package 'ffmpeg' to be installed.
+
+    Saves the animation as an mp4 video.
+
+    Parameters:
+    colored_grid (2D list of Hue objects): The starting grid.
+    number_of_frames (int): How many steps until the animation restarts.
+    filename (str): What the HTML file should be saved as.
+    color_variation (float): A newly born cell will deviate from its color randomly up or down, with this amount being the maximum possible deviation.
+    hard_boundary (bool): Setting this to False will identify opposite edges so that cells touching the boundary will communicate with cells on the other side of the grid.
+    rule (2D list of integers): The first set of elements is how many neighbors leads to a birth, and the second is how many neighbors lead to a cell surviving.
+    interval (int): The number of milliseconds each step should take in the animation.
+    cell_size (float): The number of inches per side of each cell.
+    """
+
+    colorful_animation_limited(colored_grid, number_of_frames, color_variation=color_variation,
+                               hard_boundary=hard_boundary, rule=rule, interval=interval, cell_size=cell_size,
+                               show=False).save(filename, writer='ffmpeg', savefig_kwargs={'facecolor': 'black'})
+    plt.close()
