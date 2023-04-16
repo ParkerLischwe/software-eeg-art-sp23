@@ -11,23 +11,44 @@ import matplotlib.animation as anm
 import matplotlib.colors as clrs
 
 
-class Hue:
-    """This is a class to represent a color's hue as a float mod 1. Two Hue objects can be added together to get a new Hue object."""
+class Color:
+    """This is a class to represent colors as RGB triples."""
 
-    def __init__(self, value):
-        self.value = float(value % 1)
-
-    def __bool__(self):
-        return True
-
-    def __float__(self):
-        return float(self.value)
+    def __init__(self, r, g, b):
+        self.r = r
+        self.g = g
+        self.b = b
 
     def __repr__(self):
-        return repr(self.value)
+        return f"Color({self.r}, {self.g}, {self.b})"
+
+    def __str__(self):
+        return f"({self.r}, {self.g}, {self.b})"
 
     def __add__(self, other):
-        return Hue(self.value + other.value)
+        if isinstance(other, Color):
+            r = min(self.r + other.r, 255)
+            g = min(self.g + other.g, 255)
+            b = min(self.b + other.b, 255)
+            return Color(r, g, b)
+        raise TypeError("Unsupported operand for +: 'Color' and " + str(type(other)))
+
+    def __sub__(self, other):
+        if isinstance(other, Color):
+            r = max(self.r - other.r, 0)
+            g = max(self.g - other.g, 0)
+            b = max(self.b - other.b, 0)
+            return Color(r, g, b)
+        raise TypeError("Unsupported operand for -: 'Color' and " + str(type(other)))
+
+    def __eq__(self, other):
+        if isinstance(other, Color):
+            return self.r == other.r and self.g == other.g and self.b == other.b
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 
 def average_hue(list_of_hues):
@@ -41,15 +62,20 @@ def average_hue(list_of_hues):
     Hue
     """
 
-    x = 0.0
-    y = 0.0
+    red = 0.0
+    green = 0.0
+    blue = 0.0
+    count = 0
     # Take all the hues as points on a unit circle and average their coordinates to find the average
     for hue in list_of_hues:
-        x += math.cos(hue.value * 2 * math.pi)
-        y += math.sin(hue.value * 2 * math.pi)
-    x /= len(list_of_hues)
-    y /= len(list_of_hues)
-    return Hue(math.atan2(y, x) / (2 * math.pi))
+        red += hue.r
+        blue += hue.b
+        green += hue.g
+        count = count + 1
+    red = red / count
+    green = green / count
+    blue = blue / count
+    return Color(red, blue, green)
 
 
 def random_grid(height, width, density=.3, padding=0):
@@ -83,8 +109,10 @@ def random_colors(grid):
     Returns:
     2D list of Hue objects
     """
-
-    return [[Hue(random()) if cell else None for cell in row] for row in grid]
+    red = random.randrange(256)
+    blue = random.randrange(256)
+    green = random.randrange(256)
+    return [[Color(red, blue, green) if cell else None for cell in row] for row in grid]
 
 
 def colorful_life_step(colored_grid, color_variation=0.05, hard_boundary=True, rule=[[3], [2, 3]]):
@@ -94,13 +122,13 @@ def colorful_life_step(colored_grid, color_variation=0.05, hard_boundary=True, r
     The Colorful Game of Life has the same rules as Conway's Game of Life, except that all living cells also have a color assigned to them. When a new cell is born, it will take on the average color of its parents. Color variation can be added so that newly born cells can deviate slightly in color. Living cells will keep their color fixed until they die.
 
     Parameters:
-    colored_grid (2D list of Hue objects): The grid that should be stepped through
+    colored_grid (2D list of Color objects): The grid that should be stepped through
     color_variation (float): A newly born cell will deviate from its color randomly up or down, with this amount being the maximum possible deviation.
     hard_boundary (bool): Setting this to False will identify opposite edges so that cells touching the boundary will communicate with cells on the other side of the grid.
     rule (2D list of integers): The first set of elements is how many neighbors leads to a birth, and the second is how many neighbors lead to a cell surviving.
 
     Returns:
-    2D list of Hue objects
+    2D list of Color objects
     """
 
     height = len(colored_grid)
@@ -122,8 +150,11 @@ def colorful_life_step(colored_grid, color_variation=0.05, hard_boundary=True, r
                             row.append(None)
                     else:
                         if neighbor_count in rule[0]:
-                            hue = average_hue(live_neighbors)
-                            row.append(Hue(hue.value + uniform(-color_variation, color_variation)))
+                            color = average_hue(live_neighbors)
+                            color.r += uniform(-color_variation, color_variation)
+                            color.g += uniform(-color_variation, color_variation)
+                            color.b += uniform(-color_variation, color_variation)
+                            row.append(color)
                         else:
                             row.append(None)
                 next_grid.append(row)
@@ -137,56 +168,62 @@ def colorful_life_step(colored_grid, color_variation=0.05, hard_boundary=True, r
                         # width is short
                         live_neighbors = [colored_grid[(j + a) % height][(i + b) % width] for a in (-1, 0, 1) for b in
                                           range(width) if (
-                                                      (a != 0 or b != 0) and colored_grid[(j + a) % height][
-                                                  (i + b) % width])]
+                                                  (a != 0 or b != 0) and colored_grid[(j + a) % height][(i + b) % width])]
                     elif width >= 3:
                         # height is short
                         live_neighbors = [colored_grid[(j + a) % height][(i + b) % width] for a in range(height) for b
                                           in (-1, 0, 1) if (
-                                                      (a != 0 or b != 0) and colored_grid[(j + a) % height][
-                                                  (i + b) % width])]
+                                                  (a != 0 or b != 0) and colored_grid[(j + a) % height][(i + b) % width])]
                     else:
                         # width and height are short
                         live_neighbors = [colored_grid[(j + a) % height][(i + b) % width] for a in range(height) for b
                                           in range(width) if (
-                                                      (a != 0 or b != 0) and colored_grid[(j + a) % height][
-                                                  (i + b) % width])]
+                                                  (a != 0 or b != 0) and colored_grid[(j + a) % height][
+                                              (i + b) % width])]
 
-                    neighbor_count = len(live_neighbors)
-                    if colored_grid[j][i]:
-                        if neighbor_count in rule[1]:
-                            row.append(colored_grid[j][i])
+                        neighbor_count = len(live_neighbors)
+                        if colored_grid[j][i]:
+                            if neighbor_count in rule[1]:
+                                row.append(colored_grid[j][i])
+                            else:
+                                row.append(None)
                         else:
-                            row.append(None)
-                    else:
-                        if neighbor_count in rule[0]:
-                            hue = average_hue(live_neighbors)
-                            row.append(Hue(hue.value + uniform(-color_variation, color_variation)))
-                        else:
-                            row.append(None)
+                            if neighbor_count in rule[0]:
+                                color = average_hue(live_neighbors)
+                                color.r += uniform(-color_variation, color_variation)
+                                color.g += uniform(-color_variation, color_variation)
+                                color.b += uniform(-color_variation, color_variation)
+                                row.append(color)
+                            else:
+                                row.append(None)
                 next_grid.append(row)
-            return next_grid
-    else:
-        for j in range(height):
-            row = []
-            for i in range(width):
-                live_neighbors = [colored_grid[j + a][i + b] for a in (-1, 0, 1) for b in (-1, 0, 1) if (
-                            (a != 0 or b != 0) and ((j + a) % height is j + a) and (
-                                (i + b) % width is i + b) and colored_grid[j + a][i + b])]
-                neighbor_count = len(live_neighbors)
-                if colored_grid[j][i]:
-                    if neighbor_count in rule[1]:
-                        row.append(colored_grid[j][i])
-                    else:
-                        row.append(None)
-                else:
-                    if neighbor_count in rule[0]:
-                        hue = average_hue(live_neighbors)
-                        row.append(Hue(hue.value + uniform(-color_variation, color_variation)))
-                    else:
-                        row.append(None)
-            next_grid.append(row)
-        return next_grid
+                return next_grid
+            else:
+                # Implementing the hard boundary logic
+                for j in range(height):
+                    row = []
+                    for i in range(width):
+                        live_neighbors = [
+                            colored_grid[j + a][i + b] if 0 <= j + a < height and 0 <= i + b < width else None for
+                            a in (-1, 0, 1) for b in (-1, 0, 1) if (a != 0 or b != 0)]
+                        live_neighbors = [neighbor for neighbor in live_neighbors if neighbor is not None]
+                        neighbor_count = len(live_neighbors)
+                        if colored_grid[j][i]:
+                            if neighbor_count in rule[1]:
+                                row.append(colored_grid[j][i])
+                            else:
+                                row.append(None)
+                        else:
+                            if neighbor_count in rule[0]:
+                                color = average_hue(live_neighbors)
+                                color.r += uniform(-color_variation, color_variation)
+                                color.g += uniform(-color_variation, color_variation)
+                                color.b += uniform(-color_variation, color_variation)
+                                row.append(color)
+                            else:
+                                row.append(None)
+                    next_grid.append(row)
+                return next_grid
 
 
 def colorful_animation(colored_grid, color_variation=0.05, hard_boundary=True, rule=[[3], [2, 3]], interval=300,
@@ -261,38 +298,44 @@ def colorful_animation_limited(colored_grid, number_of_frames, color_variation=0
     An Animation object
     """
 
+    # Define width and height variables
+    width = len(colored_grid[0])
+    height = len(colored_grid)
+
     def grid_to_array(grid):
-        X = np.asarray(grid)
-        X = X.astype(float)
+        height = len(grid)
+        width = len(grid[0])
+        X = np.empty((height, width, 3), dtype=np.float32)
+        for i in range(height):
+            for j in range(width):
+                if grid[i][j] is None:
+                    X[i][j] = [0.0, 0.0, 0.0]  # Set to black for None values
+                else:
+                    # Extract RGB values from Color object
+                    X[i][j] = [grid[i][j].r / 255.0, grid[i][j].g / 255.0, grid[i][j].b / 255.0]
         return X
 
-    frames = []
-
-    for i in range(number_of_frames):
-        frames.append(colored_grid)
-        colored_grid = colorful_life_step(colored_grid, color_variation, hard_boundary, rule)
-
-    height = len(colored_grid)
-    width = len(colored_grid[0])
+    def animate(frame):
+        plt.cla()
+        ax.imshow(frame, cmap='viridis', norm=clrs.Normalize(vmin=0, vmax=1),
+                  interpolation='nearest')
 
     fig = plt.figure(figsize=(width * cell_size, height * cell_size))
     ax = fig.add_axes([0, 0, 1, 1], xticks=[], yticks=[], frameon=False)
     ax.axes.xaxis.set_visible(False)
     ax.axes.yaxis.set_visible(False)
-
     fig.patch.set_facecolor('black')
 
-    def animate(colored_grid):
-        plt.cla()
-        ax.imshow(grid_to_array(colored_grid), cmap=plt.cm.hsv, norm=clrs.Normalize(vmin=0, vmax=1),
-                  interpolation='nearest')
+    frames = []
+
+    for i in range(number_of_frames):
+        frames.append(grid_to_array(colored_grid))
+        colored_grid = colorful_life_step(colored_grid, color_variation, hard_boundary, rule)
 
     anim = anm.FuncAnimation(fig, animate, frames=frames, interval=interval)
 
     if show:
         plt.show()
-
-    return anim
 
 
 def save_as_html(colored_grid, number_of_frames, filename, color_variation=0.05, hard_boundary=True, rule=[[3], [2, 3]],
