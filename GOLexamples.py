@@ -63,82 +63,83 @@ for num in nums3:
 
 
 
+def value_to_rgb(value):
+    """
+    Converts a value between 0 and 4225 to RGB values based on predefined thresholds.
 
+    Parameters:
+    value (int): The value to convert.
+
+    Returns:
+    Tuple (r, g, b): The RGB values as integers between 0 and 255.
+    """
+
+    # Define thresholds
+    threshold1 = 700
+    threshold2 = 1400
+    max_value = 4225
+
+    # Calculate normalized value between 0 and 1
+    normalized_value = value / max_value
+
+    # Color 1: Red to Orange to Yellow
+    if value <= threshold1:
+        normalized_value = value / threshold1
+        r = 255
+        g = int(normalized_value * 255)
+        b = 0
+
+    # Color 2: Light Yellow to Green to Light Blue
+    elif threshold1 < value <= threshold2:
+        normalized_value = (value - threshold1) / (threshold2 - threshold1)
+        r = 255 - int(normalized_value * 255)
+        g = 255
+        b = int(normalized_value * 255)
+
+    # Color 3: Light Blue to Dark Blue
+    else:
+        normalized_value = (value - threshold2) / (max_value - threshold2)
+        r = 0
+        g = 255 - int(normalized_value * 255)
+        b = 255
+
+    return r, g, b
 
 replicator_rule = [[None for i in range(65)] for j in range(65)]
-count = 0;
-frames = 25;
+sum = 0
+count = 0
+count2 = 0
+frames = 25
+nums4 = nums[count2 * 25: 25 * (count + 1)]
+for num in nums4:
+    sum += num
+sum = sum / 25
 while True:
     while frames <= 25:
         nums2 = nums[count * 25: 25*(count + 1)]
         for num in nums2:
+            rgb = value_to_rgb(num)
+            r = rgb[0]
+            g = rgb[1]
+            b = rgb[2]
         # Calculate x and y coordinates
             x = num // 65
             y = num % 65
-            if num < 35:
-                replicator_rule[x][y] = Color(128, 0, 0)
-            elif num < 140:
-                replicator_rule[x][y] = Color(153, 0, 0)
-            elif num < 210:
-                replicator_rule[x][y] = Color(204, 0, 0)
-            elif num < 280:
-                replicator_rule[x][y] = Color(255, 0, 0)
-            elif num < 350:
-                replicator_rule[x][y] = Color(255, 51, 0)
-            elif num < 420:
-                replicator_rule[x][y] = Color(255, 102, 0)
-            elif num < 490:
-                replicator_rule[x][y] = Color(255, 153, 51)
-            elif num < 560:
-                replicator_rule[x][y] = Color(255, 204, 0)
-            elif num < 630:
-                replicator_rule[x][y] = Color(255, 255, 0)
-            elif num < 700:
-                replicator_rule[x][y] = Color(255, 255, 102)
-            elif num < 770:
-                replicator_rule[x][y] = Color(255, 255, 153)
-            elif num < 840:
-                replicator_rule[x][y] = Color(204, 255, 153)
-            elif num < 910:
-                replicator_rule[x][y] = Color(204, 255, 102)
-            elif num < 980:
-                replicator_rule[x][y] = Color(204, 255, 51)
-            elif num < 1050:
-                replicator_rule[x][y] = Color(153, 204, 0)
-            elif num < 1120:
-                replicator_rule[x][y] = Color(153, 255, 51)
-            elif num < 1190:
-                replicator_rule[x][y] = Color(153, 255, 102)
-            elif num < 1260:
-                replicator_rule[x][y] = Color(102, 255, 51)
-            elif num < 1330:
-                replicator_rule[x][y] = Color(51, 204, 51)
-            elif num < 1400:
-                replicator_rule[x][y] = Color(0, 153, 51)
-            elif num < 1470:
-                replicator_rule[x][y] = Color(0, 204, 102)
-            elif num < 1540:
-                replicator_rule[x][y] = Color(0, 204, 153)
-            elif num < 1610:
-                replicator_rule[x][y] = Color(51, 204, 204)
-            elif num < 1680:
-                replicator_rule[x][y] = Color(0, 153, 204)
-            elif num < 1750:
-                replicator_rule[x][y] = Color(0, 102, 204)
-            else:
-                replicator_rule[x][y] = Color(18, 90, 29)
-        colorful_animation_limited(replicator_rule, frames, hard_boundary=False, rule=[[1,3,5,7],[1,3,5,7]], interval=150, cell_size=.1)
+            replicator_rule[x][y] = Color(r, g, b)
+            if sum < 563:
+                replicator_rule[x - 1][y - 1] = Color(r, g, b)
+                replicator_rule[x + 1][y - 1] = Color(r, g, b)
+                replicator_rule[x - 1][y + 1] = Color(r, g, b)
+                replicator_rule[x + 1][y + 1] = Color(r, g, b)
+        colorful_animation_limited(replicator_rule, frames, hard_boundary=False, rule=[[3,1,2,1],[3,1,2,1]], interval=150, cell_size=.1)
         frames = frames + 1
+        #save_as_gif(replicator_rule, 25, "replicator_rule.gif", hard_boundary=False, rule=[[1, 3, 5, 7], [1, 3, 5, 7]],
+                    #interval=150, cell_size=.1)  # takes quite a bit of time
     if frames > 25:
         frames = 25
         replicator_rule = [[None for i in range(65)] for j in range(65)]
         count += 1
 
-
-
-
-
-#save_as_gif(replicator_rule, 190, "replicator_rule.gif", hard_boundary=False, rule=[[1,3,5,7],[1,3,5,7]], interval=150, cell_size=.1) #takes quite a bit of time
 
 
 
