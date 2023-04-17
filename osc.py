@@ -45,11 +45,12 @@ class CircularBuffer:
 
 BUFFER_SIZE = 512
 num_samples_processed = 0
+num_fft_calc = 0
 sample_factor = 1
 sample_counter = 0
 
 # counter variable controls the sliding window granularity (5 waits for 5 points to make next fft calculation)
-counter = 0
+counter = 2
 
 ch1_buff = CircularBuffer(BUFFER_SIZE)
 oldest_idx1 = 0
@@ -71,7 +72,7 @@ newest_idx4 = 0
 
 # Define a callback function to handle incoming OSC messages
 def process_eeg_signal(address, *args):
-    global num_samples_processed, sample_factor, counter, sample_counter
+    global num_samples_processed, sample_factor, counter, sample_counter, num_fft_calc
     global ch1_buff, ch2_buff, ch3_buff, ch4_buff
     global oldest_idx1, newest_idx1, oldest_idx2, newest_idx2
     global oldest_idx3, newest_idx3, oldest_idx4, newest_idx4
@@ -100,64 +101,64 @@ def process_eeg_signal(address, *args):
     
     # Add new samples to channel 4 buffer
     ch4_buff.add_sample(data[3])
-    newest_idx4 += 1
+    newest_idx4 += 1 
     
-    counter += 1
-    
-    if counter == 3:
-        counter = 0
-        try:
-            
-        # Process ch1 data
-        print(ch1_buff.size)
-        channel1_fft = np.fft.fft(ch1_buff)[:256]
-        ch1_gamma = np.sum(np.abs(channel1_fft[32:100]))
-        ch1_beta = np.sum(np.abs(channel1_fft[13:32]))
-        ch1_alpha = np.sum(np.abs(channel1_fft[4:8]))
-        ch1_theta = np.sum(np.abs(channel1_fft[0:4]))
+    if num_samples_processed >= 512:
+        counter += 1
+        if counter == 3:
+            counter = 0
+            # print(ch1_buff.size)
+            channel1_fft = np.fft.fft(ch1_buff.buffer)[:256]
+            num_fft_calc += 1
+            print(num_fft_calc)
+            ch1_gamma = np.sum(np.abs(channel1_fft[32:100]))
+            ch1_beta = np.sum(np.abs(channel1_fft[13:32]))
+            ch1_alpha = np.sum(np.abs(channel1_fft[4:8]))
+            ch1_theta = np.sum(np.abs(channel1_fft[0:4]))
 
-        # Process ch2 data
-        channel2_fft = np.fft.fft(ch2_buff)[:256]
-        ch2_gamma = np.sum(np.abs(channel2_fft[32:100]))
-        ch2_beta = np.sum(np.abs(channel2_fft[13:32]))
-        ch2_alpha = np.sum(np.abs(channel2_fft[4:8]))
-        ch2_theta = np.sum(np.abs(channel2_fft[0:4]))
+            # Process ch2 data
+            channel2_fft = np.fft.fft(ch2_buff.buffer)[:256]
+            ch2_gamma = np.sum(np.abs(channel2_fft[32:100]))
+            ch2_beta = np.sum(np.abs(channel2_fft[13:32]))
+            ch2_alpha = np.sum(np.abs(channel2_fft[4:8]))
+            ch2_theta = np.sum(np.abs(channel2_fft[0:4]))
 
-        # Process ch3 data
-        channel3_fft = np.fft.fft(ch3_buff)[:256]
-        ch3_gamma = np.sum(np.abs(channel3_fft[32:100]))
-        ch3_beta = np.sum(np.abs(channel3_fft[13:32]))
-        ch3_alpha = np.sum(np.abs(channel3_fft[4:8]))
-        ch3_theta = np.sum(np.abs(channel3_fft[0:4]))
+            # Process ch3 data
+            channel3_fft = np.fft.fft(ch3_buff.buffer)[:256]
+            ch3_gamma = np.sum(np.abs(channel3_fft[32:100]))
+            ch3_beta = np.sum(np.abs(channel3_fft[13:32]))
+            ch3_alpha = np.sum(np.abs(channel3_fft[4:8]))
+            ch3_theta = np.sum(np.abs(channel3_fft[0:4]))
 
-        # Process ch4 data
-        channel4_fft = np.fft.fft(ch4_buff)[:256]
-        ch4_gamma = np.sum(np.abs(channel4_fft[32:100]))
-        ch4_beta = np.sum(np.abs(channel4_fft[13:32]))
-        ch4_alpha = np.sum(np.abs(channel4_fft[4:8]))
-        ch4_theta = np.sum(np.abs(channel4_fft[0:4]))
+            # Process ch4 data
+            channel4_fft = np.fft.fft(ch4_buff.buffer)[:256]
+            ch4_gamma = np.sum(np.abs(channel4_fft[32:100]))
+            ch4_beta = np.sum(np.abs(channel4_fft[13:32]))
+            ch4_alpha = np.sum(np.abs(channel4_fft[4:8]))
+            ch4_theta = np.sum(np.abs(channel4_fft[0:4]))
 
-        # Reset oldest indices for all buffers
-        oldest_idx1 = newest_idx1 - BUFFER_SIZE
-        oldest_idx2 = newest_idx2 - BUFFER_SIZE
-        oldest_idx3 = newest_idx3 - BUFFER_SIZE
-        oldest_idx4 = newest_idx4 - BUFFER_SIZE
+            # Reset oldest indices for all buffers
+            oldest_idx1 = newest_idx1 - BUFFER_SIZE
+            oldest_idx2 = newest_idx2 - BUFFER_SIZE
+            oldest_idx3 = newest_idx3 - BUFFER_SIZE
+            oldest_idx4 = newest_idx4 - BUFFER_SIZE
 
-        # Wrap around if we've reached the end of the buffer
-        if oldest_idx1 < 0:
-            oldest_idx1 += BUFFER_SIZE
-        if oldest_idx2 < 0:
-            oldest_idx2 += BUFFER_SIZE
-        if oldest_idx3 < 0:
-            oldest_idx3 += BUFFER_SIZE
-        if oldest_idx4 < 0:
-            oldest_idx4 += BUFFER_SIZE
-        data = [ch1_gamma, ch2_gamma, ch3_gamma, ch4_gamma]
+            # Wrap around if we've reached the end of the buffer
+            if oldest_idx1 < 0:
+                oldest_idx1 += BUFFER_SIZE
+            if oldest_idx2 < 0:
+                oldest_idx2 += BUFFER_SIZE
+            if oldest_idx3 < 0:
+                oldest_idx3 += BUFFER_SIZE
+            if oldest_idx4 < 0:
+                oldest_idx4 += BUFFER_SIZE
+            data = [ch1_gamma, ch2_gamma, ch3_gamma, ch4_gamma]
+            print("Data is here: ", data)
 
     num_samples_processed += 1
 
     client = SimpleUDPClient('127.0.0.1', 5005)
-    print("Data is here: ", data)
+    # print("Data is here: ", data)
     client.send_message('/PetalStream/eeg', data)
     # server_max.handle_request()
     # server_max.serve_forever()
