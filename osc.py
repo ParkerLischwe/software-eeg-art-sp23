@@ -44,38 +44,39 @@ class CircularBuffer:
         return self.buffer
 
 BUFFER_SIZE = 512
+scale = BUFFER_SIZE/256
 num_samples_processed = 0
 num_fft_calc = 0
 sample_factor = 1
 sample_counter = 0
 
-# counter variable controls the sliding window granularity (5 waits for 5 points to make next fft calculation)
-counter = 2
+# counter variable controls the sliding window granularity (this is initialized one less than the amount of new points you wait for to make next fft calc)
+counter = 29
 
-ch1_buff = CircularBuffer(BUFFER_SIZE)
-oldest_idx1 = 0
-newest_idx1 = 0
+TP9_buff = CircularBuffer(BUFFER_SIZE)
+oldest_idxTP9 = 0
+newest_idxTP9 = 0
 
-ch2_buff = CircularBuffer(BUFFER_SIZE)
-oldest_idx2 = 0
-newest_idx2 = 0
+AF7_buff = CircularBuffer(BUFFER_SIZE)
+oldest_idxAF7 = 0
+newest_idxAF7 = 0
 
-ch3_buff = CircularBuffer(BUFFER_SIZE)
-oldest_idx3 = 0
-newest_idx3 = 0
+AF8_buff = CircularBuffer(BUFFER_SIZE)
+oldest_idxAF8 = 0
+newest_idxAF8 = 0
 
-ch4_buff = CircularBuffer(BUFFER_SIZE)
-oldest_idx4 = 0
-newest_idx4 = 0
+TP10_buff = CircularBuffer(BUFFER_SIZE)
+oldest_idxTP10 = 0
+newest_idxTP10 = 0
 
 
 
 # Define a callback function to handle incoming OSC messages
 def process_eeg_signal(address, *args):
     global num_samples_processed, sample_factor, counter, sample_counter, num_fft_calc
-    global ch1_buff, ch2_buff, ch3_buff, ch4_buff
-    global oldest_idx1, newest_idx1, oldest_idx2, newest_idx2
-    global oldest_idx3, newest_idx3, oldest_idx4, newest_idx4
+    global TP9_buff, AF7_buff, AF8_buff, TP10_buff
+    global oldest_idxTP9, newest_idxTP9, oldest_idxAF7, newest_idxAF7
+    global oldest_idxAF8, newest_idxAF8, oldest_idxTP10, newest_idxTP10
     sample_id = args[0]
     unix_ts = args[1] + args[2]
     lsl_ts = args[3] + args[4]
@@ -83,83 +84,92 @@ def process_eeg_signal(address, *args):
 
     # This chunk controls how much data we sample from the incoming stream. 
     # When equal to 1 we sample every data point in the stream
-    sample_counter += 1
+    #Does this work? See if tuning this changes anything
+    sample_counter += 10
     if counter % sample_factor != 0:
         return
 
      # Add new samples to channel 1 buffer
-    ch1_buff.add_sample(data[0])
-    newest_idx1 += 1
+    TP9_buff.add_sample(data[0])
+    newest_idxTP9 += 1
 
     # Add new samples to channel 2 buffer
-    ch2_buff.add_sample(data[1])
-    newest_idx2 += 1
+    AF7_buff.add_sample(data[1])
+    newest_idxAF7 += 1
     
     # Add new samples to channel 3 buffer
-    ch3_buff.add_sample(data[2])
-    newest_idx3 += 1
+    AF8_buff.add_sample(data[2])
+    newest_idxAF8 += 1
     
     # Add new samples to channel 4 buffer
-    ch4_buff.add_sample(data[3])
-    newest_idx4 += 1 
+    TP10_buff.add_sample(data[3])
+    newest_idxTP10 += 1 
     
-    if num_samples_processed >= 512:
+    if num_samples_processed >= BUFFER_SIZE:
         counter += 1
-        if counter == 3:
+        if counter == 30:
             counter = 0
             # print(ch1_buff.size)
-            channel1_fft = np.fft.fft(ch1_buff.buffer)[:256]
-            num_fft_calc += 1
-            print(num_fft_calc)
-            ch1_gamma = np.sum(np.abs(channel1_fft[32:100]))
-            ch1_beta = np.sum(np.abs(channel1_fft[13:32]))
-            ch1_alpha = np.sum(np.abs(channel1_fft[4:8]))
-            ch1_theta = np.sum(np.abs(channel1_fft[0:4]))
+            TP9_fft = np.fft.fft(TP9_buff.buffer)
+            TP9_gamma = np.sum(np.abs(TP9_fft[int((30*scale)):int((100*scale))]))
+            TP9_beta = np.sum(np.abs(TP9_fft[int((12*scale)):int((30*scale))]))
+            TP9_alpha = np.sum(np.abs(TP9_fft[int((8*scale)):int((12*scale))]))
+            TP9_theta = np.sum(np.abs(TP9_fft[int((4*scale)):int((8*scale))]))
 
             # Process ch2 data
-            channel2_fft = np.fft.fft(ch2_buff.buffer)[:256]
-            ch2_gamma = np.sum(np.abs(channel2_fft[32:100]))
-            ch2_beta = np.sum(np.abs(channel2_fft[13:32]))
-            ch2_alpha = np.sum(np.abs(channel2_fft[4:8]))
-            ch2_theta = np.sum(np.abs(channel2_fft[0:4]))
+            AF7_fft = np.fft.fft(AF7_buff.buffer)
+            AF7_gamma = np.sum(np.abs(AF7_fft[int((30*scale)):int((100*scale))]))
+            AF7_beta = np.sum(np.abs(AF7_fft[int((12*scale)):int((30*scale))]))
+            AF7_alpha = np.sum(np.abs(AF7_fft[int((8*scale)):int((12*scale))]))
+            AF7_theta = np.sum(np.abs(AF7_fft[int((4*scale)):int((8*scale))]))
 
             # Process ch3 data
-            channel3_fft = np.fft.fft(ch3_buff.buffer)[:256]
-            ch3_gamma = np.sum(np.abs(channel3_fft[32:100]))
-            ch3_beta = np.sum(np.abs(channel3_fft[13:32]))
-            ch3_alpha = np.sum(np.abs(channel3_fft[4:8]))
-            ch3_theta = np.sum(np.abs(channel3_fft[0:4]))
+            AF8_fft = np.fft.fft(AF8_buff.buffer)
+            AF8_gamma = np.sum(np.abs(AF8_fft[int((30*scale)):int((100*scale))]))
+            AF8_beta = np.sum(np.abs(AF8_fft[int((12*scale)):int((30*scale))]))
+            AF8_alpha = np.sum(np.abs(AF8_fft[int((8*scale)):int((12*scale))]))
+            AF8_theta = np.sum(np.abs(AF8_fft[int((4*scale)):int((8*scale))]))
 
             # Process ch4 data
-            channel4_fft = np.fft.fft(ch4_buff.buffer)[:256]
-            ch4_gamma = np.sum(np.abs(channel4_fft[32:100]))
-            ch4_beta = np.sum(np.abs(channel4_fft[13:32]))
-            ch4_alpha = np.sum(np.abs(channel4_fft[4:8]))
-            ch4_theta = np.sum(np.abs(channel4_fft[0:4]))
+            TP10_fft = np.fft.fft(TP10_buff.buffer)
+            TP10_gamma = np.sum(np.abs(TP10_fft[int((30*scale)):int((100*scale))]))
+            TP10_beta = np.sum(np.abs(TP10_fft[int((12*scale)):int((30*scale))]))
+            TP10_alpha = np.sum(np.abs(TP10_fft[int((8*scale)):int((12*scale))]))
+            TP10_theta = np.sum(np.abs(TP10_fft[int((4*scale)):int((8*scale))]))
+
+            # Calculate x and y coordinates of the mouse coordinates
+            # x is calculated using the lateralization index on theta bands from TP9(left hem) and TP10(right hem) channels
+            # y is calculated using the lateralizaation index on alpha bands from TP9(left hem) and TP10(right hem) channels
+            # If x or y is pos, more power in right hem which indicates (high and to the right is high right brain activity)
+            x_coord = (TP10_theta - TP9_theta)/(TP10_theta + TP9_theta)
+            y_coord = (TP10_alpha - TP9_alpha)/(TP10_alpha + TP9_alpha) 
 
             # Reset oldest indices for all buffers
-            oldest_idx1 = newest_idx1 - BUFFER_SIZE
-            oldest_idx2 = newest_idx2 - BUFFER_SIZE
-            oldest_idx3 = newest_idx3 - BUFFER_SIZE
-            oldest_idx4 = newest_idx4 - BUFFER_SIZE
+            oldest_idxTP9 = newest_idxTP9 - BUFFER_SIZE
+            oldest_idxAF7 = newest_idxAF7 - BUFFER_SIZE
+            oldest_idxAF8 = newest_idxAF8 - BUFFER_SIZE
+            oldest_idxTP10 = newest_idxTP10 - BUFFER_SIZE
 
             # Wrap around if we've reached the end of the buffer
-            if oldest_idx1 < 0:
-                oldest_idx1 += BUFFER_SIZE
-            if oldest_idx2 < 0:
-                oldest_idx2 += BUFFER_SIZE
-            if oldest_idx3 < 0:
-                oldest_idx3 += BUFFER_SIZE
-            if oldest_idx4 < 0:
-                oldest_idx4 += BUFFER_SIZE
-            data = [ch1_gamma, ch2_gamma, ch3_gamma, ch4_gamma]
+            if oldest_idxTP9 < 0:
+                oldest_idxTP9 += BUFFER_SIZE
+            if oldest_idxAF7 < 0:
+                oldest_idxAF7 += BUFFER_SIZE
+            if oldest_idxAF8 < 0:
+                oldest_idxAF8 += BUFFER_SIZE
+            if oldest_idxTP10 < 0:
+                oldest_idxTP10 += BUFFER_SIZE
+
+            data = [x_coord, y_coord]
+            client = SimpleUDPClient('127.0.0.1', 5005)
+            client.send_message('/PetalStream/eeg', data)
             print("Data is here: ", data)
 
     num_samples_processed += 1
 
-    client = SimpleUDPClient('127.0.0.1', 5005)
+    
     # print("Data is here: ", data)
-    client.send_message('/PetalStream/eeg', data)
+    # client.send_message('/PetalStream/eeg', data)
     # server_max.handle_request()
     # server_max.serve_forever()
     # print(f"max Received OSC message: {address} {args}")
