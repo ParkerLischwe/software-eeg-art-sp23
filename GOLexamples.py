@@ -2,143 +2,179 @@ from GOL import *
 import csv
 import random
 
-import csv
+AF_alpha_to_beta = []
+AF_alpha_to_theta = []
+AF_gamma_to_alpha = []
+AF_gamma_to_beta = []
+TP_alpha_to_beta = []
+TP_alpha_to_theta = []
+TP_gamma_to_alpha = []
+TP_gamma_to_beta = []
 
-with open('alpha_to_beta_ratios.csv', 'r') as file:
+with open('alpha_beta_theta_gamma.csv', 'r') as file:
     # Create a CSV reader object
     csv_reader = csv.reader(file)
-    nums = []
-    nums2 = []
+
     # Skip the first row
     next(csv_reader)
+
     # Iterate through each row in the CSV file
     for row in csv_reader:
-        # Iterate through each value in the row
-        for value in row:
-            # Convert the value to a float and perform the division
-            num = round(float(value) / 0.00146484375)
-            nums.append(num)
-            nums2.append(float(value))
+        # Extract the values and convert them to floats
+        AF_alpha_beta_ratio = float(row[0])
+        AF_alpha_theta_ratio = float(row[1])
+        AF_gamma_alpha_ratio = float(row[2])
+        AF_gamma_beta_ratio = float(row[3])
+        TP_alpha_beta_ratio = float(row[4])
+        TP_alpha_theta_ratio = float(row[5])
+        TP_gamma_alpha_ratio = float(row[6])
+        TP_gamma_beta_ratio = float(row[7])
 
-# Now you can access the calculated values in the nums list
-print(nums)
-print(nums2)
+        # Perform the division and append to the respective lists
+        AF_alpha_to_beta.append(round(AF_alpha_beta_ratio / 0.00047337278))
+        AF_alpha_to_theta.append(AF_alpha_theta_ratio)
+        AF_gamma_to_alpha.append(AF_gamma_alpha_ratio)
+        AF_gamma_to_beta.append(AF_gamma_beta_ratio)
+        TP_alpha_to_beta.append(round(TP_alpha_beta_ratio / 0.00047337278))
+        TP_alpha_to_theta.append(TP_alpha_theta_ratio)
+        TP_gamma_to_alpha.append(TP_gamma_alpha_ratio)
+        TP_gamma_to_beta.append(TP_gamma_beta_ratio)
 
-import numpy as np
-
-# Create a 25x25 grid with None values
-rand_grid = [[None for _ in range(25)] for _ in range(25)]
-
-# Add 25 dummy values to the nums array
-for i in range(50):
-    dummy_value = random.randint(25*i, 25*i + 25)
-    nums.append(dummy_value)
-nums3 = [
-    2300, 2959, 3310, 451, 66, 2798, 1277, 1444, 3535, 4024,
-    2704, 2589, 2906, 151, 183, 3452, 3519, 3864, 125, 3465,
-    942, 2631, 3197, 128, 3387, 2325, 3890, 280, 2040, 3432,
-    976, 1096, 3615, 1987, 3914, 82, 3617, 1429, 3094, 220,
-    3780, 2162, 2640, 3297, 1750, 826, 925, 930, 1764, 3633,
-    1994, 3549, 3150, 1971, 2461, 2851, 307, 3250, 297, 1825,
-    895, 3244, 2610, 2387, 579, 785, 1739, 3088, 3462, 3946,
-    1859, 2702, 2363, 4038, 4159, 1305, 3336, 3866, 2859, 4052,
-    1428, 2311, 2911, 3068, 3142, 929, 3905, 2301, 1215, 2302,
-    2075, 190, 946, 3227, 526, 490, 658, 1868, 595, 1101, 3946,
-    815, 2483, 1014, 2446, 2900, 1011, 297, 3341, 315, 2894,
-    3441, 2669, 3166, 503, 2701, 1426, 2409, 3896, 2236, 2225,
-    1065, 1433, 4160, 1169, 878, 2141, 2990, 1848, 3460, 4122,
-    3605, 1319, 1491, 451, 3346, 3510, 3692, 2986, 1299, 4103,
-    1459, 1174, 1195, 2391, 1002, 3537, 3396, 3638, 609, 644,
-    4007, 2634, 149, 549, 2385, 1983, 2115, 3509, 4174, 2012,
-    792, 4025, 1517, 4047, 2926, 2373, 611, 1054, 4130, 3696,
-    1500, 1813, 3393, 1395, 3957, 2418, 52, 429, 3543, 2272,
-    557, 2432, 3818, 4137, 178, 286, 1419, 2141, 2736, 2171,
-    3353, 335]
-for num in nums3:
-    nums.append(num)
 
 #rand_grid = random_colors(random_grid(25, 25))
 #colorful_animation(rand_grid)
 #save_as_gif(rand_grid, 100, "random_example.gif") # this can take a minute and will only start after the animation window from the previous line is closed
 
-
-
-def value_to_rgb(value):
-    """
-    Converts a value between 0 and 4225 to RGB values based on predefined thresholds.
-
-    Parameters:
-    value (int): The value to convert.
-
-    Returns:
-    Tuple (r, g, b): The RGB values as integers between 0 and 255.
-    """
-
-    # Define thresholds
-    threshold1 = 700
-    threshold2 = 1400
-    max_value = 4225
-
-    # Calculate normalized value between 0 and 1
-    normalized_value = value / max_value
-
-    # Color 1: Red to Orange to Yellow
-    if value <= threshold1:
-        normalized_value = value / threshold1
-        r = 255
-        g = int(normalized_value * 255)
-        b = 0
-
-    # Color 2: Light Yellow to Green to Light Blue
-    elif threshold1 < value <= threshold2:
-        normalized_value = (value - threshold1) / (threshold2 - threshold1)
-        r = 255 - int(normalized_value * 255)
-        g = 255
-        b = int(normalized_value * 255)
-
-    # Color 3: Light Blue to Dark Blue
-    else:
-        normalized_value = (value - threshold2) / (max_value - threshold2)
+def value_to_rgb(val, brightness):
+    value = val * 2
+    if value < 0.01:
         r = 0
-        g = 255 - int(normalized_value * 255)
+        g = 0
+        b = 0
+    elif value < 0.15:
+        r = 176
+        g = 48
+        b = 96
+    elif value < 0.3:
+        r = 236
+        g = 88
+        b = 135
+    elif value < 0.45:
+        r = 128
+        g = 0
+        b = 128
+    elif value < 0.6:
+        r = 30
+        g = 30
+        b = 160
+    elif value < 0.75:
+        r = 100
+        g = 149
+        b = 237
+    elif value < 0.9:
+        r = 0
+        g = 255
         b = 255
+    elif value < 1.05:
+        r = 0
+        g = 255
+        b = 127
+    elif value < 1.2:
+        r = 50
+        g = 205
+        b = 50
+    elif value < 1.35:
+        r = 255
+        g = 255
+        b = 0
+    elif value < 1.5:
+        r = 255
+        g = 165
+        b = 0
+    elif value < 1.65:
+        r = 255
+        g = 69
+        b = 0
+    elif value < 1.8:
+        r = 255
+        g = 0
+        b = 0
+    elif value < 2.00:
+        r = 255
+        g = 0
+        b = 255
+    else:
+        r = 255
+        g = 0
+        b = 255
+    return r * brightness * 1.3, g * brightness * 1.3, b * brightness * 1.3
 
-    return r, g, b
 
 replicator_rule = [[None for i in range(65)] for j in range(65)]
-sum = 0
 count = 0
-count2 = 0
 frames = 25
-nums4 = nums[count2 * 25: 25 * (count + 1)]
-for num in nums4:
-    sum += num
-sum = sum / 25
+colors = []
 while True:
     while frames <= 25:
-        nums2 = nums[count * 25: 25*(count + 1)]
-        for num in nums2:
-            rgb = value_to_rgb(num)
+        i = 0
+        nums = AF_alpha_to_theta[count * 250: 250*(count + 1)]
+        nums2 = AF_alpha_to_beta[count * 250: 250 *(count + 1)]
+        nums3 = TP_alpha_to_beta[count * 250: 250 * (count + 1)]
+        nums4 = sum(TP_alpha_to_theta[count * 250: 250 * (count + 1)]) / 250
+        nums5 = sum(AF_gamma_to_alpha) / len(AF_gamma_to_alpha) / 2.5
+        interval4 = 0.45
+        while 10 * i < len(nums):
+            avg1 = sum(nums[10 * i: 10 * (i + 1)]) / 10
+            avg2 = sum(nums[10 * i: 10 * (i + 1)]) / 10 / 4225
+            rgb = value_to_rgb(avg1, nums4)
             r = rgb[0]
             g = rgb[1]
             b = rgb[2]
-        # Calculate x and y coordinates
-            x = num // 65
-            y = num % 65
+            avg = (sum(nums2[10 * i: 10 * (i + 1)]) + sum(nums3[10 * i: 10 * (i + 1)]))/ 10 / 2
+            x = int(avg // 65)
+            y = int(avg % 65)
             replicator_rule[x][y] = Color(r, g, b)
-            if sum < 563:
-                replicator_rule[x - 1][y - 1] = Color(r, g, b)
-                replicator_rule[x + 1][y - 1] = Color(r, g, b)
-                replicator_rule[x - 1][y + 1] = Color(r, g, b)
-                replicator_rule[x + 1][y + 1] = Color(r, g, b)
-        colorful_animation_limited(replicator_rule, frames, hard_boundary=False, rule=[[3,1,2,1],[3,1,2,1]], interval=150, cell_size=.1)
-        frames = frames + 1
-        #save_as_gif(replicator_rule, 25, "replicator_rule.gif", hard_boundary=False, rule=[[1, 3, 5, 7], [1, 3, 5, 7]],
-                    #interval=150, cell_size=.1)  # takes quite a bit of time
-    if frames > 25:
-        frames = 25
-        replicator_rule = [[None for i in range(65)] for j in range(65)]
-        count += 1
+            i = i + 1
+        chaotic_rules = [[[1,4,6], [8], [8], [2,5]],
+                        [[2,5], [1,2], [1,5,6], [7]],
+                        [[1,3,5], [1,3,5,7], [1,3,5,7]],
+                        [[1,4,7], [2,4,5,6,7]],
+                        [[1,3], [7], [1,2,3,6], [3,8]],
+                        [[1,2,4,6], [2,4,5]],
+                        [[1,7], [3,6], [1,2,5], [6,8]],
+                        [[1], [1,4,5]],
+                        [[1, 5, 8], [5,8], [1,2,3,4]],
+                        [[1,8], [1,7], [1,6], [1,5], [1,4], [1,3], [1,2], [1]]]
+        middle_rules = [[[1,4,5], [2,4,5], [1,3,5,7]],
+                        [[1,2,3,4], [1,2,3,4,5]],
+                        [[1,2,3,8], [2], [4,5]],
+                        [[1,3,5], [2,4]],
+                        [[1,3,4,5,6,7], [2,8]],
+                        [[1,4,5,7], [2]],
+                        [[1,2], [3,4], [5,6], [7,8], [1,5], [2,4], [3]],
+                        [[2,6], [1,2,3,4]],
+                        [[1,6,7,8], [3,4,5,6,7,8]],
+                        [[1,2,5], [2,6,8]]]
+        stable_rules = [[[1,2,3,4], [1,2,3,4,5]],
+                        [[1,2,4,5], [2,4,5,6,8]],
+                        [[1,2,3,4,5,6,7,8], [3,6], [3,4,5,6]],
+                        [[1,2,3,4,5,6,7,8], [1,8], [4,5,6,7], [2,3]],
+                        [[2,3,4], [1]],
+                        [[2,3,4], [1,4]],
+                        [[1,2,3,4,5,6], [2,3,4,5], [3,4]],
+                        [[1,2,3,4,5,6,7,8], [1,2,3,4,5,6,7,8]],
+                        [[2,4,5,8], [1,4,5,6,7,8]],
+                        [[1,2,3,4], [5,6,7,8], [1,4], [2,3]]]
+
+
+        def get_threshold(value):
+            if value < 0.333:
+                return stable_rules[random.randrange(0,9)]
+            elif value < 0.666:
+                return middle_rules[random.randrange(0,9)]
+            else:
+                return chaotic_rules[random.randrange(0,9)]
+        colorful_animation_limited(replicator_rule, frames, hard_boundary=False, rule= get_threshold(nums5), interval=(750/nums5) , cell_size=.1)
 
 
 
