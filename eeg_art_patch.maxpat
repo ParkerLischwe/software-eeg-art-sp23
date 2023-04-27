@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 838.0, 87.0, 837.0, 775.0 ],
+		"rect" : [ 1049.0, 87.0, 837.0, 775.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -103,7 +103,7 @@
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ 486.0, 101.0, 920.0, 532.0 ],
+						"rect" : [ 1223.0, 253.0, 920.0, 532.0 ],
 						"bglocked" : 0,
 						"openinpresentation" : 0,
 						"default_fontsize" : 12.0,
@@ -138,7 +138,7 @@
 									"maxclass" : "newobj",
 									"numinlets" : 1,
 									"numoutlets" : 0,
-									"patching_rect" : [ 513.0, 244.666672000000005, 95.0, 22.0 ],
+									"patching_rect" : [ 530.5, 242.666672000000005, 95.0, 22.0 ],
 									"text" : "s mouseCoords"
 								}
 
@@ -451,7 +451,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "jit_gl_texture", "" ],
-					"patching_rect" : [ 158.600020999999998, 53.0, 192.0, 22.0 ],
+					"patching_rect" : [ 158.600020999999998, 53.0, 190.0, 22.0 ],
 					"text" : "jit.gl.camera tut02 @position 0 0 4"
 				}
 
@@ -475,7 +475,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 3,
 					"outlettype" : [ "jit_matrix", "bang", "" ],
-					"patching_rect" : [ 16.600014000000002, 91.599991000000003, 638.0, 22.0 ],
+					"patching_rect" : [ 16.600014000000002, 91.599991000000003, 636.0, 22.0 ],
 					"text" : "jit.world tut02 @fsaa 1 @size 320 240 @windowposition 1000 100 @floating 1 @erase_color 0 0 0 0.5 @fsmenubar 0"
 				}
 
@@ -508,7 +508,7 @@
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ 269.0, 87.0, 573.0, 705.0 ],
+						"rect" : [ 1006.0, 384.0, 880.0, 665.0 ],
 						"bglocked" : 0,
 						"openinpresentation" : 0,
 						"default_fontsize" : 12.0,
@@ -536,7 +536,45 @@
 						"style" : "",
 						"subpatcher_template" : "",
 						"assistshowspatchername" : 0,
+						"visible" : 1,
 						"boxes" : [ 							{
+								"box" : 								{
+									"format" : 6,
+									"id" : "obj-20",
+									"maxclass" : "flonum",
+									"numinlets" : 1,
+									"numoutlets" : 2,
+									"outlettype" : [ "", "bang" ],
+									"parameter_enable" : 0,
+									"patching_rect" : [ 480.0, 250.0, 50.0, 22.0 ]
+								}
+
+							}
+, 							{
+								"box" : 								{
+									"id" : "obj-5",
+									"maxclass" : "newobj",
+									"numinlets" : 1,
+									"numoutlets" : 1,
+									"outlettype" : [ "" ],
+									"patching_rect" : [ 598.0, 321.0, 97.0, 22.0 ],
+									"text" : "udpreceive 5005"
+								}
+
+							}
+, 							{
+								"box" : 								{
+									"id" : "obj-7",
+									"linecount" : 3,
+									"maxclass" : "comment",
+									"numinlets" : 1,
+									"numoutlets" : 0,
+									"patching_rect" : [ 480.0, 199.0, 150.0, 47.0 ],
+									"text" : "Update this variable so that 0.05 is the constant value for center_attr"
+								}
+
+							}
+, 							{
 								"box" : 								{
 									"id" : "obj-27",
 									"maxclass" : "newobj",
@@ -557,18 +595,6 @@
 									"outlettype" : [ "", "" ],
 									"patching_rect" : [ 592.333337783813477, 388.0, 132.0, 22.0 ],
 									"text" : "route /PetalStream/eeg"
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"id" : "obj-5",
-									"maxclass" : "newobj",
-									"numinlets" : 1,
-									"numoutlets" : 1,
-									"outlettype" : [ "" ],
-									"patching_rect" : [ 592.333337783813477, 342.0, 97.0, 22.0 ],
-									"text" : "udpreceive 5005"
 								}
 
 							}
@@ -647,25 +673,12 @@
 							}
 , 							{
 								"box" : 								{
-									"format" : 6,
-									"id" : "obj-59",
-									"maxclass" : "flonum",
-									"numinlets" : 1,
-									"numoutlets" : 2,
-									"outlettype" : [ "", "bang" ],
-									"parameter_enable" : 0,
-									"patching_rect" : [ 480.0, 252.800003000000004, 50.0, 22.0 ]
-								}
-
-							}
-, 							{
-								"box" : 								{
 									"id" : "obj-60",
 									"maxclass" : "message",
 									"numinlets" : 2,
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
-									"patching_rect" : [ 480.0, 286.799987999999985, 85.0, 22.0 ],
+									"patching_rect" : [ 480.0, 286.799987999999985, 83.0, 22.0 ],
 									"text" : "center_attr $1"
 								}
 
@@ -1009,7 +1022,7 @@
 									"numoutlets" : 2,
 									"outlettype" : [ "", "bang" ],
 									"parameter_enable" : 0,
-									"patching_rect" : [ 394.333333611488342, 237.133336015441898, 50.0, 22.0 ]
+									"patching_rect" : [ 398.5, 237.133336015441898, 50.0, 22.0 ]
 								}
 
 							}
@@ -1045,7 +1058,7 @@
 									"numinlets" : 9,
 									"numoutlets" : 2,
 									"outlettype" : [ "jit_matrix", "" ],
-									"patching_rect" : [ 166.399993999999992, 635.0, 704.0, 35.0 ],
+									"patching_rect" : [ 166.399993999999992, 635.0, 694.0, 35.0 ],
 									"text" : "jit.gl.mesh tut02 @antialias 1 @draw_mode points @point_size 1 @color 1 1 1 1 @blend add @blend_enable 1 @depth_enable 0 @point_size 0.5"
 								}
 
@@ -1870,7 +1883,7 @@
 										"editing_bgcolor" : [ 0.9, 0.9, 0.9, 1.0 ]
 									}
 ,
-									"patching_rect" : [ 230.399993999999992, 291.0, 107.0, 22.0 ],
+									"patching_rect" : [ 230.399993999999992, 291.0, 108.0, 22.0 ],
 									"text" : "jit.gen @title force"
 								}
 
@@ -1954,6 +1967,13 @@
 							}
 , 							{
 								"patchline" : 								{
+									"destination" : [ "obj-60", 0 ],
+									"source" : [ "obj-20", 0 ]
+								}
+
+							}
+, 							{
+								"patchline" : 								{
 									"destination" : [ "obj-50", 0 ],
 									"order" : 0,
 									"source" : [ "obj-22", 0 ]
@@ -1985,15 +2005,15 @@
 							}
 , 							{
 								"patchline" : 								{
-									"destination" : [ "obj-41", 0 ],
-									"source" : [ "obj-27", 3 ]
+									"destination" : [ "obj-20", 0 ],
+									"source" : [ "obj-27", 2 ]
 								}
 
 							}
 , 							{
 								"patchline" : 								{
-									"destination" : [ "obj-59", 0 ],
-									"source" : [ "obj-27", 2 ]
+									"destination" : [ "obj-41", 0 ],
+									"source" : [ "obj-27", 3 ]
 								}
 
 							}
@@ -2081,13 +2101,6 @@
 								"patchline" : 								{
 									"destination" : [ "obj-17", 1 ],
 									"source" : [ "obj-52", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-60", 0 ],
-									"source" : [ "obj-59", 0 ]
 								}
 
 							}
