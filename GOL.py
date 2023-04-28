@@ -22,8 +22,10 @@ import time
 
 def it_got_to_max(address, *args):
     print("Max data recieved: ", args)
-if os.path.exists(eeg_data3.csv):
-    with open(eeg_data3.csv, 'w') as f:
+
+if os.path.exists('eeg_data3.csv'):
+    with open('eeg_data3.csv', 'w') as f:
+        pass
 def write_data_to_csv(data):
     with open('eeg_data3.csv', mode='a') as csv_file:
         writer = csv.writer(csv_file)
